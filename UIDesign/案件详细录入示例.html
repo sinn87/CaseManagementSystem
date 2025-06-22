@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>案件详细录入示例</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .tab-content {
+      margin-top: 20px;
+    }
+    .back-btn {
+      margin-right: 10px;
+    }
+    .tab-pane {
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container-fluid mt-2">
+  <!-- 顶部菜单栏 -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light mb-2">
+    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+      <li class="nav-item"><a class="nav-link" href="#">照会</a></li>
+      <li class="nav-item"><a class="nav-link active" href="#">编辑</a></li>
+      <li class="nav-item"><a class="nav-link" href="#">审查</a></li>
+      <li class="nav-item"><a class="nav-link" href="#">输出</a></li>
+      <li class="nav-item"><a class="nav-link" href="#">中止</a></li>
+    </ul>
+    <span class="navbar-text ms-auto" style="color:#007bff;">2024/06/18 15:00:00</span>
+  </nav>
+  <!-- 顶部信息区 -->
+  <div class="d-flex align-items-center mb-2">
+    <input type="text" class="form-control w-auto me-2" value="案件类型" readonly style="width:120px;">
+    <input type="text" class="form-control w-auto me-2" value="8601" readonly style="width:80px;">
+    <input type="text" class="form-control w-auto me-2" value="大和证券" readonly style="width:120px;">
+    <input type="text" class="form-control w-auto me-2" value="PJ示例" readonly style="width:150px;">
+    <button class="btn btn-danger ms-2">中止</button>
+    <button class="btn btn-primary ms-2">一括保存</button>
+  </div>
+  <!-- 标签页 -->
+  <ul class="nav nav-tabs" id="caseTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab1-tab" data-bs-toggle="tab" data-bs-target="#tab1" type="button" role="tab">发行体信息</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab2-tab" data-bs-toggle="tab" data-bs-target="#tab2" type="button" role="tab">担当者信息</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab3-tab" data-bs-toggle="tab" data-bs-target="#tab3" type="button" role="tab">日程</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab4-tab" data-bs-toggle="tab" data-bs-target="#tab4" type="button" role="tab">案件信息1</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab5-tab" data-bs-toggle="tab" data-bs-target="#tab5" type="button" role="tab">案件信息2</button>
+    </li>
+    <!-- 可继续添加更多标签 -->
+  </ul>
+  <div class="tab-content" style="background:#fff;">
+    <div class="tab-pane fade show active" id="tab1" role="tabpanel">
+      <div class="row">
+        <!-- 左侧字段名列表 -->
+        <div class="col-md-2 bg-info bg-opacity-25 p-3">
+          <div class="mb-2">证券代码</div>
+          <div class="mb-2">大和发称代码</div>
+          <div class="mb-2">简称代码</div>
+          <div class="mb-2">市场（优先）</div>
+          <div class="mb-2">市场（重复）</div>
+          <div class="mb-2">ISIN代码</div>
+          <div class="mb-2">单位株数</div>
+        </div>
+        <!-- 右侧输入控件 -->
+        <div class="col-md-10 p-3">
+          <div class="mb-2">
+            <select class="form-select w-25 d-inline-block">
+              <option>请选择</option>
+              <option>选项1</option>
+              <option>选项2</option>
+            </select>
+          </div>
+          <input type="text" class="form-control mb-2 w-25" placeholder="请输入大和发称代码">
+          <input type="text" class="form-control mb-2 w-25" placeholder="请输入简称代码">
+          <input type="text" class="form-control mb-2 w-25" placeholder="请输入市场（优先）">
+          <input type="text" class="form-control mb-2 w-25" placeholder="请输入市场（重复）">
+          <input type="text" class="form-control mb-2 w-25" placeholder="请输入ISIN代码">
+          <input type="number" class="form-control mb-2 w-25" placeholder="请输入单位株数">
+        </div>
+      </div>
+      <div class="d-flex justify-content-end mt-3">
+        <button class="btn btn-secondary me-2">数据取入</button>
+        <button class="btn btn-warning me-2">一时保存</button>
+        <button class="btn btn-success">审查依赖</button>
+      </div>
+    </div>
+    <!-- 其他tab内容可仿照上面结构补充 -->
+    <div class="tab-pane fade" id="tab2" role="tabpanel">担当者信息内容</div>
+    <div class="tab-pane fade" id="tab3" role="tabpanel">日程内容</div>
+    <div class="tab-pane fade" id="tab4" role="tabpanel">案件信息1内容</div>
+    <div class="tab-pane fade" id="tab5" role="tabpanel">案件信息2内容</div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

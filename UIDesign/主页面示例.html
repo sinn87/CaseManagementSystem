@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>主页面示例</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .main-btns {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 60px;
+    }
+    .exit-btn {
+      position: fixed;
+      right: 40px;
+      bottom: 40px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+<div class="container mt-5">
+  <h2 class="text-center mb-5">案件管理系统</h2>
+  <div class="main-btns">
+    <button class="btn btn-primary btn-lg">登录新案件</button>
+    <button class="btn btn-secondary btn-lg">案件一览</button>
+    <button class="btn btn-info btn-lg">日常工作</button>
+    <button class="btn btn-warning btn-lg">用户管理</button>
+  </div>
+  <button class="btn btn-danger btn-lg exit-btn">退出</button>
+</div>
+</body>
+</html> 

@@ -1,0 +1,89 @@
+# Visual Studio 临时文件
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# 构建结果
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio 2015/2017 缓存/选项目录
+.vs/
+
+# Visual Studio 2017 自动生成的文件
+Generated\ Files/
+
+# MSTest 测试结果
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NUnit
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# 构建项目文件
+*.tmp
+*.temp
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+
+# 用户特定文件
+*.rsuser
+
+# 项目文件
+*.vbproj.user
+
+# 历史记录文件夹
+.history/
+
+# Cursor IDE 文件夹
+.cursor/
+
+# 数据库文件
+*.mdb
+*.accdb
+*.db
+*.sqlite
+
+# 配置文件（如果包含敏感信息）
+app.config
+web.config
+*.config
+
+# 包管理文件
+packages/
+*.nupkg
+
+# 其他临时文件
+*.bak
+*.swp
+*~
+
+# Windows 系统文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 压缩文件
+*.zip
+*.rar
+*.7z 

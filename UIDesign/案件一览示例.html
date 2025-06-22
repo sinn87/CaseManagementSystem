@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>案件一览示例</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .search-row {
+      margin-bottom: 20px;
+    }
+    .table-responsive {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+<div class="container mt-4">
+  <div class="d-flex align-items-center mb-3">
+    <img src="https://cdn-icons-png.flaticon.com/512/25/25694.png" alt="返回" width="32" height="32" style="cursor:pointer;">
+    <h4 class="ms-3">案件一览</h4>
+    <button class="btn btn-outline-secondary ms-auto">返回</button>
+  </div>
+  <form class="row search-row">
+    <div class="col-md-2 mb-2"><input type="text" class="form-control" placeholder="案件状态"></div>
+    <div class="col-md-2 mb-2"><input type="text" class="form-control" placeholder="案件类型"></div>
+    <div class="col-md-2 mb-2"><input type="text" class="form-control" placeholder="品种码"></div>
+    <div class="col-md-2 mb-2"><input type="text" class="form-control" placeholder="品种名"></div>
+    <div class="col-md-2 mb-2"><input type="text" class="form-control" placeholder="案件名"></div>
+    <div class="col-md-2 mb-2"><input type="date" class="form-control" placeholder="发表日"></div>
+    <div class="col-md-2 mb-2"><input type="date" class="form-control" placeholder="上场日"></div>
+    <div class="col-md-2 mb-2"><input type="text" class="form-control" placeholder="公司角色"></div>
+    <div class="col-md-2 mb-2"><input type="date" class="form-control" placeholder="最新更新日"></div>
+    <div class="col-md-2 mb-2"><input type="text" class="form-control" placeholder="中止登录状态"></div>
+    <div class="col-md-2 mb-2"><button class="btn btn-primary w-100">搜索</button></div>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th>案件状态</th>
+          <th>案件类型</th>
+          <th>品种码</th>
+          <th>品种名</th>
+          <th>案件名</th>
+          <th>发表日</th>
+          <th>上场日</th>
+          <th>公司角色</th>
+          <th>最新更新日</th>
+          <th>中止登录状态</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>进行中</td>
+          <td>IPO</td>
+          <td>12345</td>
+          <td>某品种</td>
+          <td>IPO项目A</td>
+          <td>2024-06-01</td>
+          <td>2024-06-10</td>
+          <td>主承销商</td>
+          <td>2024-06-15</td>
+          <td>否</td>
+        </tr>
+        <!-- 更多数据行 -->
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html> 
