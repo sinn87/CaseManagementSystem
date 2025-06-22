@@ -56,13 +56,19 @@ Public Class CaseDetailEntryForm
     Private Sub CreateTabPages()
         For i = 1 To 9
             Dim tabPage As New TabPage($"信息页{i}")
+            ' 注意：实际项目中建议使用设计器创建控件
+            ' 这里仅作为示例，控件生成代码已移动到 Controls/CodeGenerated/ 文件夹
             CreateSampleControls(tabPage, i)
             tabControl.TabPages.Add(tabPage)
+            
+            ' 自动调整TabPage大小
+            Utils.TabPageSizeAdjuster.AdjustTabPageSize(tabPage, Me)
         Next
     End Sub
 
     Private Sub CreateSampleControls(tabPage As TabPage, pageIndex As Integer)
-        ' 创建示例控件，实际开发中可根据需要调整
+        ' 创建示例控件，实际开发中建议使用设计器
+        ' 控件生成代码参考：Controls/CodeGenerated/TabPageSizeAdjuster_Generated.vb
         Dim y As Integer = 20
         
         ' 创建一些示例控件并设置Tag属性对应数据库字段
@@ -110,6 +116,22 @@ Public Class CaseDetailEntryForm
             .Tag = $"Date_{pageIndex}"
         }
         tabPage.Controls.Add(dtp)
+        
+        y += 30
+        
+        ' 添加一个RichTextBox示例
+        Dim rtb As New RichTextBox With {
+            .Location = New Point(20, y),
+            .Width = 400,
+            .Height = 100,
+            .Tag = $"RichText_{pageIndex}"
+        }
+        tabPage.Controls.Add(rtb)
+        
+        y += 120
+        
+        ' 自动调整TabPage大小
+        Utils.TabPageSizeAdjuster.AdjustTabPageSize(tabPage, Me)
     End Sub
 
     Private Sub picHome_Click(sender As Object, e As EventArgs)

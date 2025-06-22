@@ -197,7 +197,7 @@ Public MustInherit Class BaseTabTemplate
     End Function
     
     ''' <summary>
-    ''' 创建控件组
+    ''' 创建控件组 - 基础版本，仅用于现有控件的布局调整
     ''' </summary>
     Protected Sub CreateControlGroup(tabPage As TabPage, controls() As (String, String, Control), ByRef y As Integer)
         For Each controlInfo In controls
@@ -230,5 +230,30 @@ Public MustInherit Class BaseTabTemplate
             tabPage.Controls.Add(control)
             y += 30
         Next
+        
+        ' 在创建完控件组后，检查是否需要调整TabPage大小
+        AdjustTabPageSizeIfNeeded(tabPage)
+    End Sub
+    
+    ''' <summary>
+    ''' 检查并调整TabPage大小
+    ''' </summary>
+    ''' <param name="tabPage">TabPage</param>
+    Private Sub AdjustTabPageSizeIfNeeded(tabPage As TabPage)
+        Try
+            ' 检查TabPage是否有父容器
+            If tabPage.Parent IsNot Nothing AndAlso TypeOf tabPage.Parent Is TabControl Then
+                Dim tabControl As TabControl = DirectCast(tabPage.Parent, TabControl)
+                Dim parentForm As Form = tabControl.FindForm()
+                
+                If parentForm IsNot Nothing Then
+                    ' 使用工具类调整TabPage大小
+                    Utils.TabPageSizeAdjuster.AdjustTabPageSize(tabPage, parentForm)
+                End If
+            End If
+        Catch ex As Exception
+            ' 记录错误但不影响主要功能
+            Utils.LogUtil.LogError("调整TabPage大小失败", ex)
+        End Try
     End Sub
 End Class 

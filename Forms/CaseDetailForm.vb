@@ -232,11 +232,30 @@ Public Class CaseDetailForm
         ' 加载数据到模板
         _currentTemplate.LoadData(_caseDetails)
         
+        ' 自动调整TabPage大小
+        AdjustTabPageSizes()
+        
         ' 添加Tab切换事件
         AddHandler tabControl.SelectedIndexChanged, AddressOf TabControl_SelectedIndexChanged
         
         ' 更新Tab状态
         UpdateTabStatus()
+    End Sub
+    
+    ''' <summary>
+    ''' 自动调整TabPage大小
+    ''' </summary>
+    Private Sub AdjustTabPageSizes()
+        Try
+            ' 调整所有TabPage的大小
+            Utils.TabPageSizeAdjuster.AdjustAllTabPages(tabControl, Me)
+            
+            ' 记录调整日志
+            Utils.LogUtil.LogInfo($"已自动调整TabPage大小，窗体大小：{Me.Width}x{Me.Height}")
+            
+        Catch ex As Exception
+            Utils.LogUtil.LogError("自动调整TabPage大小失败", ex)
+        End Try
     End Sub
     
     Private Sub TabControl_SelectedIndexChanged(sender As Object, e As EventArgs)
@@ -248,6 +267,11 @@ Public Class CaseDetailForm
                 Dim tabIndex As Integer = tabControl.SelectedIndex
                 SetTabPageControlColors(selectedTabPage, tabIndex)
             End If
+        End If
+        
+        ' 重新调整当前TabPage大小
+        If tabControl.SelectedTab IsNot Nothing Then
+            Utils.TabPageSizeAdjuster.AdjustTabPageSize(tabControl.SelectedTab, Me)
         End If
     End Sub
     

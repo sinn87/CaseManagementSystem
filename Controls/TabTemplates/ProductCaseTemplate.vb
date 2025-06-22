@@ -70,6 +70,7 @@ Public Class ProductCaseTemplate
             ("电子邮箱", "Email", New TextBox)
         }
         
+        ' 使用基础控件组方法
         CreateControlGroup(tabPage, controls, y)
     End Sub
     
@@ -83,6 +84,7 @@ Public Class ProductCaseTemplate
             ("产品描述", "Description", New RichTextBox)
         }
         
+        ' 使用基础控件组方法
         CreateControlGroup(tabPage, controls, y)
     End Sub
     
@@ -95,6 +97,7 @@ Public Class ProductCaseTemplate
             ("技术要求", "TechnicalRequirement", New RichTextBox)
         }
         
+        ' 使用基础控件组方法
         CreateControlGroup(tabPage, controls, y)
     End Sub
     
@@ -106,6 +109,7 @@ Public Class ProductCaseTemplate
             ("不合格处理", "UnqualifiedProcess", New RichTextBox)
         }
         
+        ' 使用基础控件组方法
         CreateControlGroup(tabPage, controls, y)
     End Sub
     
@@ -118,6 +122,7 @@ Public Class ProductCaseTemplate
             ("生产设备", "ProductionEquipment", New RichTextBox)
         }
         
+        ' 使用基础控件组方法
         CreateControlGroup(tabPage, controls, y)
     End Sub
     
@@ -130,6 +135,7 @@ Public Class ProductCaseTemplate
             ("检验备注", "InspectionMemo", New RichTextBox)
         }
         
+        ' 使用基础控件组方法
         CreateControlGroup(tabPage, controls, y)
     End Sub
     
@@ -142,6 +148,7 @@ Public Class ProductCaseTemplate
             ("运输要求", "TransportRequirement", New RichTextBox)
         }
         
+        ' 使用基础控件组方法
         CreateControlGroup(tabPage, controls, y)
     End Sub
     
