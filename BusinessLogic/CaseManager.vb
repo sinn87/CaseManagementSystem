@@ -1,5 +1,6 @@
 ' 案件管理业务逻辑
 Imports System.Collections.Generic
+Imports System.Data.OleDb
 
 Public Class CaseManager
     ''' <summary>
@@ -10,6 +11,9 @@ Public Class CaseManager
     ''' <param name="currentUser">当前用户ID</param>
     ''' <returns>是否保存成功</returns>
     Public Shared Function CreateNewCase(caseType As String, tabData As Dictionary(Of Integer, Dictionary(Of String, String)), currentUser As String) As Boolean
+        Dim connection As OleDbConnection = Nothing
+        Dim transaction As OleDbTransaction = Nothing
+        
         Try
             ' 1. 创建案件主记录
             Dim caseInfo As New CaseInfo With {
@@ -21,9 +25,7 @@ Public Class CaseManager
                 .CreateUser = currentUser
             }
             
-            Dim caseId As Integer = CaseRepository.CreateCase(caseInfo)
-            
-            ' 2. 保存有修改的标签页数据
+            ' 2. 准备详细信息数据
             Dim caseDetails As New List(Of CaseDetail)()
             Dim reviewLogs As New List(Of ReviewLog)()
             
@@ -33,10 +35,9 @@ Public Class CaseManager
                 
                 ' 检查是否有数据被修改
                 If fieldData.Count > 0 Then
-                    ' 保存字段数据
+                    ' 准备字段数据
                     For Each fieldKvp In fieldData
                         Dim detail As New CaseDetail With {
-                            .CaseID = caseId,
                             .TabIndex = tabIndex,
                             .FieldNo = fieldKvp.Key,
                             .FieldValue = fieldKvp.Value,
@@ -46,9 +47,8 @@ Public Class CaseManager
                         caseDetails.Add(detail)
                     Next
                     
-                    ' 创建审查记录
+                    ' 准备审查记录
                     Dim reviewLog As New ReviewLog With {
-                        .CaseID = caseId,
                         .TabIndex = tabIndex,
                         .ReviewerID = currentUser,
                         .ReviewStatus = "新登录",
@@ -58,22 +58,55 @@ Public Class CaseManager
                 End If
             Next
             
-            ' 3. 批量保存详细信息
+            ' 3. 开始数据库事务
+            connection = DbHelper.GetConnection()
+            transaction = DbHelper.BeginTransaction(connection)
+            
+            ' 4. 在事务中创建案件主记录
+            Dim caseId As Integer = CaseRepository.CreateCaseWithTransaction(transaction, caseInfo)
+            
+            ' 5. 在事务中批量保存详细信息
             If caseDetails.Count > 0 Then
-                CaseRepository.SaveCaseDetails(caseDetails)
+                ' 设置案件ID
+                For Each detail In caseDetails
+                    detail.CaseID = caseId
+                Next
+                CaseRepository.SaveCaseDetailsWithTransaction(transaction, caseDetails)
             End If
             
-            ' 4. 批量保存审查记录
+            ' 6. 在事务中批量保存审查记录
             For Each reviewLog In reviewLogs
-                CaseRepository.CreateReviewLog(reviewLog)
+                reviewLog.CaseID = caseId
+                CaseRepository.CreateReviewLogWithTransaction(transaction, reviewLog)
             Next
+            
+            ' 7. 提交事务
+            transaction.Commit()
             
             Return True
             
         Catch ex As Exception
+            ' 8. 回滚事务
+            If transaction IsNot Nothing Then
+                Try
+                    transaction.Rollback()
+                Catch rollbackEx As Exception
+                    Utils.LogUtil.LogError("事务回滚失败", rollbackEx)
+                End Try
+            End If
+            
             ' 记录错误日志
             Utils.LogUtil.LogError("创建新案件失败", ex)
             Return False
+            
+        Finally
+            ' 9. 清理资源
+            If transaction IsNot Nothing Then
+                transaction.Dispose()
+            End If
+            If connection IsNot Nothing Then
+                connection.Dispose()
+            End If
         End Try
     End Function
     

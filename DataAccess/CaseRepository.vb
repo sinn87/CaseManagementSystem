@@ -315,4 +315,80 @@ Public Class CaseRepository
         
         Return cases
     End Function
+    
+    ''' <summary>
+    ''' 在事务中创建新案件
+    ''' </summary>
+    ''' <param name="transaction">事务对象</param>
+    ''' <param name="caseInfo">案件信息</param>
+    ''' <returns>新创建的案件ID</returns>
+    Public Shared Function CreateCaseWithTransaction(transaction As OleDbTransaction, caseInfo As CaseInfo) As Integer
+        Dim sql As String = "INSERT INTO Cases (CaseType, CaseName, ProductCode, ProductName, Status, PublishDate, ListingDate, CompanyRole, LastUpdate, IsTerminated, CreateTime, CreateUser) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        
+        Dim parameters As OleDbParameter() = {
+            New OleDbParameter("@CaseType", caseInfo.CaseType),
+            New OleDbParameter("@CaseName", If(caseInfo.CaseName, DBNull.Value)),
+            New OleDbParameter("@ProductCode", If(caseInfo.ProductCode, DBNull.Value)),
+            New OleDbParameter("@ProductName", If(caseInfo.ProductName, DBNull.Value)),
+            New OleDbParameter("@Status", caseInfo.Status),
+            New OleDbParameter("@PublishDate", If(caseInfo.PublishDate, DBNull.Value)),
+            New OleDbParameter("@ListingDate", If(caseInfo.ListingDate, DBNull.Value)),
+            New OleDbParameter("@CompanyRole", If(caseInfo.CompanyRole, DBNull.Value)),
+            New OleDbParameter("@LastUpdate", caseInfo.LastUpdate),
+            New OleDbParameter("@IsTerminated", caseInfo.IsTerminated),
+            New OleDbParameter("@CreateTime", caseInfo.CreateTime),
+            New OleDbParameter("@CreateUser", caseInfo.CreateUser)
+        }
+        
+        DbHelper.ExecuteNonQueryWithTransaction(transaction, sql, parameters)
+        
+        ' 获取新创建的案件ID
+        Return Convert.ToInt32(DbHelper.ExecuteScalarWithTransaction(transaction, "SELECT @@IDENTITY"))
+    End Function
+    
+    ''' <summary>
+    ''' 在事务中批量保存案件详细信息
+    ''' </summary>
+    ''' <param name="transaction">事务对象</param>
+    ''' <param name="caseDetails">案件详细信息列表</param>
+    Public Shared Sub SaveCaseDetailsWithTransaction(transaction As OleDbTransaction, caseDetails As List(Of CaseDetail))
+        If caseDetails Is Nothing OrElse caseDetails.Count = 0 Then
+            Return
+        End If
+        
+        Dim sql As String = "INSERT INTO CaseDetails (CaseID, TabIndex, FieldNo, FieldValue, FieldStatus, CreateTime) VALUES (?, ?, ?, ?, ?, ?)"
+        
+        For Each detail In caseDetails
+            Dim parameters As OleDbParameter() = {
+                New OleDbParameter("@CaseID", detail.CaseID),
+                New OleDbParameter("@TabIndex", detail.TabIndex),
+                New OleDbParameter("@FieldNo", detail.FieldNo),
+                New OleDbParameter("@FieldValue", If(detail.FieldValue, DBNull.Value)),
+                New OleDbParameter("@FieldStatus", detail.FieldStatus),
+                New OleDbParameter("@CreateTime", detail.CreateTime)
+            }
+            
+            DbHelper.ExecuteNonQueryWithTransaction(transaction, sql, parameters)
+        Next
+    End Sub
+    
+    ''' <summary>
+    ''' 在事务中创建审查记录
+    ''' </summary>
+    ''' <param name="transaction">事务对象</param>
+    ''' <param name="reviewLog">审查记录</param>
+    Public Shared Sub CreateReviewLogWithTransaction(transaction As OleDbTransaction, reviewLog As ReviewLog)
+        Dim sql As String = "INSERT INTO ReviewLogs (CaseID, TabIndex, ReviewerID, ReviewStatus, ReviewComment, ReviewTime) VALUES (?, ?, ?, ?, ?, ?)"
+        
+        Dim parameters As OleDbParameter() = {
+            New OleDbParameter("@CaseID", reviewLog.CaseID),
+            New OleDbParameter("@TabIndex", reviewLog.TabIndex),
+            New OleDbParameter("@ReviewerID", reviewLog.ReviewerID),
+            New OleDbParameter("@ReviewStatus", reviewLog.ReviewStatus),
+            New OleDbParameter("@ReviewComment", If(reviewLog.ReviewComment, DBNull.Value)),
+            New OleDbParameter("@ReviewTime", reviewLog.ReviewTime)
+        }
+        
+        DbHelper.ExecuteNonQueryWithTransaction(transaction, sql, parameters)
+    End Sub
 End Class 
