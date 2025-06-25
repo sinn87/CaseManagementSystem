@@ -34,19 +34,34 @@ Public Class CaseManager
                 Dim tabIndex As Integer = kvp.Key
                 Dim fieldData As Dictionary(Of String, String) = kvp.Value
                 
-                ' 检查是否有数据被修改
-                If fieldData.Count > 0 Then
+                ' 检查是否有数据被修改（字段数据或DGV数据）
+                Dim hasFieldData As Boolean = fieldData.Count > 0
+                Dim hasGridData As Boolean = False
+                
+                ' 检查该Tab页是否有对应的DGV数据
+                For Each gridKvp In gridData
+                    Dim dgvTabIndex As Integer = GetTabIndexFromDgvName(gridKvp.Key)
+                    If dgvTabIndex = tabIndex AndAlso gridKvp.Value.Count > 0 Then
+                        hasGridData = True
+                        Exit For
+                    End If
+                Next
+                
+                ' 如果有字段数据或DGV数据，则准备审查记录
+                If hasFieldData OrElse hasGridData Then
                     ' 准备字段数据
-                    For Each fieldKvp In fieldData
-                        Dim detail As New CaseDetail With {
-                            .TabIndex = tabIndex,
-                            .FieldNo = fieldKvp.Key,
-                            .FieldValue = fieldKvp.Value,
-                            .FieldStatus = "新登录",
-                            .CreateTime = DateTime.Now
-                        }
-                        caseDetails.Add(detail)
-                    Next
+                    If hasFieldData Then
+                        For Each fieldKvp In fieldData
+                            Dim detail As New CaseDetail With {
+                                .TabIndex = tabIndex,
+                                .FieldNo = fieldKvp.Key,
+                                .FieldValue = fieldKvp.Value,
+                                .FieldStatus = "新登录",
+                                .CreateTime = DateTime.Now
+                            }
+                            caseDetails.Add(detail)
+                        Next
+                    End If
                     
                     ' 准备审查记录
                     Dim reviewLog As New ReviewLog With {
