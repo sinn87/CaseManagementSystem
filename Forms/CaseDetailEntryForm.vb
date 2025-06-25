@@ -130,6 +130,33 @@ Public Class CaseDetailEntryForm
         
         y += 120
         
+        ' 添加DataGridView示例
+        Dim dgv As New DataGridView With {
+            .Name = $"dgvItems_{pageIndex}",
+            .Location = New Point(450, 20),
+            .Size = New Size(550, 180),
+            .AllowUserToAddRows = True,
+            .AllowUserToDeleteRows = True,
+            .AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+            .Tag = $"Grid_{pageIndex}" ' Tag标识这是一个DataGridView
+        }
+        
+        ' 添加列
+        dgv.Columns.Add("ItemName", "项目名称")
+        dgv.Columns.Add("ItemValue", "项目值")
+        dgv.Columns.Add("LastUpdate", "最后更新时间")
+        dgv.Columns.Add("ReviewTime", "审查时间")
+        dgv.Columns.Add("Status", "状态")
+        dgv.Columns.Add("Reviewer", "审查人员")
+        
+        ' 设置默认值
+        dgv.Columns("LastUpdate").DefaultCellStyle.Format = "yyyy-MM-dd HH:mm:ss"
+        dgv.Columns("ReviewTime").DefaultCellStyle.Format = "yyyy-MM-dd HH:mm:ss"
+        dgv.Columns("Status").DefaultCellStyle.NullValue = "新登录"
+        dgv.Columns("Reviewer").DefaultCellStyle.NullValue = _currentUser
+        
+        tabPage.Controls.Add(dgv)
+        
         ' 自动调整TabPage大小
         Utils.TabPageSizeAdjuster.AdjustTabPageSize(tabPage, Me)
     End Sub
@@ -154,17 +181,18 @@ Public Class CaseDetailEntryForm
             btnSubmit.Enabled = False
             btnSubmit.Text = "保存中..."
             
-            ' 提取有修改的数据
+            ' 调用业务逻辑层提取数据
             Dim tabData As Dictionary(Of Integer, Dictionary(Of String, String)) = BusinessLogic.CaseManager.ExtractModifiedData(tabControl)
+            Dim tabGridData As Dictionary(Of Integer, List(Of Dictionary(Of String, String))) = BusinessLogic.CaseManager.ExtractGridData(tabControl)
             
             ' 检查是否有数据需要保存
-            If tabData.Count = 0 Then
+            If tabData.Count = 0 AndAlso tabGridData.Count = 0 Then
                 MessageBox.Show("没有检测到需要保存的数据，请至少在一个标签页中输入信息。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
             
             ' 调用业务逻辑层保存数据
-            Dim success As Boolean = BusinessLogic.CaseManager.CreateNewCase(_caseType, tabData, _currentUser)
+            Dim success As Boolean = BusinessLogic.CaseManager.CreateNewCase(_caseType, tabData, tabGridData, _currentUser)
             
             If success Then
                 MessageBox.Show("案件数据保存成功！", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information)

@@ -8,9 +8,10 @@ Public Class CaseManager
     ''' </summary>
     ''' <param name="caseType">案件类型</param>
     ''' <param name="tabData">标签页数据字典，Key为标签页索引，Value为字段数据字典</param>
+    ''' <param name="gridData">DataGridView数据字典，Key为DataGridView名称，Value为行数据列表</param>
     ''' <param name="currentUser">当前用户ID</param>
     ''' <returns>是否保存成功</returns>
-    Public Shared Function CreateNewCase(caseType As String, tabData As Dictionary(Of Integer, Dictionary(Of String, String)), currentUser As String) As Boolean
+    Public Shared Function CreateNewCase(caseType As String, tabData As Dictionary(Of Integer, Dictionary(Of String, String)), gridData As Dictionary(Of String, List(Of Dictionary(Of String, String))), currentUser As String) As Boolean
         Dim connection As OleDbConnection = Nothing
         Dim transaction As OleDbTransaction = Nothing
         
@@ -74,19 +75,34 @@ Public Class CaseManager
                 CaseRepository.SaveCaseDetailsWithTransaction(transaction, caseDetails)
             End If
             
-            ' 6. 在事务中批量保存审查记录
+            ' 6. 在事务中保存所有DGV数据
+            For Each kvp In gridData
+                Dim tableName = kvp.Key
+                Dim rows = kvp.Value
+                If rows Is Nothing OrElse rows.Count = 0 Then
+                    Continue For ' 跳过无数据的DGV
+                End If
+                For Each row In rows
+                    If Not row.ContainsKey("caseID") Then row("caseID") = caseId
+                Next
+                If Not CaseRepository.SaveGridDataWithTransaction(transaction, tableName, rows, currentUser) Then
+                    Throw New Exception($"保存表[{tableName}]数据失败")
+                End If
+            Next
+            
+            ' 7. 在事务中批量保存审查记录
             For Each reviewLog In reviewLogs
                 reviewLog.CaseID = caseId
                 CaseRepository.CreateReviewLogWithTransaction(transaction, reviewLog)
             Next
             
-            ' 7. 提交事务
+            ' 8. 提交事务
             transaction.Commit()
             
             Return True
             
         Catch ex As Exception
-            ' 8. 回滚事务
+            ' 9. 回滚事务
             If transaction IsNot Nothing Then
                 Try
                     transaction.Rollback()
@@ -100,7 +116,7 @@ Public Class CaseManager
             Return False
             
         Finally
-            ' 9. 清理资源
+            ' 10. 清理资源
             If transaction IsNot Nothing Then
                 transaction.Dispose()
             End If
@@ -108,6 +124,24 @@ Public Class CaseManager
                 connection.Dispose()
             End If
         End Try
+    End Function
+    
+    ''' <summary>
+    ''' 从DataGridView名称中提取标签页索引
+    ''' </summary>
+    ''' <param name="dgvName">DataGridView名称</param>
+    ''' <returns>标签页索引</returns>
+    Private Shared Function GetTabIndexFromDgvName(dgvName As String) As Integer
+        ' 假设命名规则为：dgvItems_1, dgvProducts_2 等
+        Dim parts As String() = dgvName.Split("_"c)
+        If parts.Length >= 2 Then
+            Dim indexStr As String = parts(parts.Length - 1)
+            Dim index As Integer
+            If Integer.TryParse(indexStr, index) Then
+                Return index - 1 ' 转换为0基索引
+            End If
+        End If
+        Return 0
     End Function
     
     ''' <summary>
@@ -143,6 +177,73 @@ Public Class CaseManager
         Next
         
         Return result
+    End Function
+    
+    ''' <summary>
+    ''' 提取所有TabPage中DataGridView的数据
+    ''' </summary>
+    ''' <param name="tabControl">TabControl控件</param>
+    ''' <returns>DataGridView名称和数据的字典</returns>
+    Public Shared Function ExtractGridData(tabControl As TabControl) As Dictionary(Of String, List(Of Dictionary(Of String, String)))
+        Dim result As New Dictionary(Of String, List(Of Dictionary(Of String, String)))
+        
+        For i As Integer = 0 To tabControl.TabPages.Count - 1
+            Dim tabPage As TabPage = tabControl.TabPages(i)
+            
+            ' 遍历标签页中的所有控件
+            For Each ctrl As Control In GetAllControls(tabPage)
+                If TypeOf ctrl Is DataGridView Then
+                    Dim dgv As DataGridView = CType(ctrl, DataGridView)
+                    Dim rows As New List(Of Dictionary(Of String, String))
+                    
+                    ' 遍历当前DataGridView的所有行
+                    For Each row As DataGridViewRow In dgv.Rows
+                        If Not row.IsNewRow Then
+                            Dim rowData As New Dictionary(Of String, String)
+                            
+                            ' 提取每一列的数据
+                            For Each col As DataGridViewColumn In dgv.Columns
+                                Dim cellValue As Object = row.Cells(col.Index).Value
+                                rowData(col.Name) = If(cellValue?.ToString(), "")
+                            Next
+                            
+                            ' 检查是否有有效数据（至少项目名称不为空）
+                            If Not String.IsNullOrEmpty(rowData("ItemName")) Then
+                                rows.Add(rowData)
+                            End If
+                        End If
+                    Next
+                    
+                    ' 如果该DataGridView有数据，则添加到结果中
+                    If rows.Count > 0 Then
+                        result(dgv.Name) = rows
+                    End If
+                End If
+            Next
+        Next
+        
+        Return result
+    End Function
+    
+    ''' <summary>
+    ''' 获取DataGridView在标签页中的索引（用于区分多个DataGridView）
+    ''' </summary>
+    ''' <param name="tabPage">标签页</param>
+    ''' <param name="targetDgv">目标DataGridView</param>
+    ''' <returns>DataGridView索引</returns>
+    Private Shared Function GetDataGridViewIndex(tabPage As TabPage, targetDgv As DataGridView) As Integer
+        Dim index As Integer = 0
+        
+        For Each ctrl As Control In GetAllControls(tabPage)
+            If TypeOf ctrl Is DataGridView Then
+                If ctrl Is targetDgv Then
+                    Return index
+                End If
+                index += 1
+            End If
+        Next
+        
+        Return 0
     End Function
     
     ''' <summary>

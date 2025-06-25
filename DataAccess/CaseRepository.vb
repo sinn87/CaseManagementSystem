@@ -391,4 +391,32 @@ Public Class CaseRepository
         
         DbHelper.ExecuteNonQueryWithTransaction(transaction, sql, parameters)
     End Sub
+    
+    ' 通用保存DGV数据方法，插入时自动补全系统字段
+    Public Shared Function SaveGridDataWithTransaction(transaction As OleDbTransaction, tableName As String, rows As List(Of Dictionary(Of String, String)), currentUser As String) As Boolean
+        If rows Is Nothing OrElse rows.Count = 0 Then Return True
+        Try
+            For Each row In rows
+                ' 自动补全系统字段
+                If Not row.ContainsKey("更新时间") Then row("更新时间") = DateTime.Now
+                If Not row.ContainsKey("更新人员") Then row("更新人员") = currentUser
+                If Not row.ContainsKey("审查日期") Then row("审查日期") = DateTime.Now
+                If Not row.ContainsKey("审查人员") Then row("审查人员") = currentUser
+                If Not row.ContainsKey("状态") Then row("状态") = "新登录"
+            Next
+            Dim fieldNames = rows(0).Keys.ToList()
+            Dim sql = $"INSERT INTO [{tableName}] (" & String.Join(",", fieldNames) & ") VALUES (" & String.Join(",", fieldNames.Select(Function(f) "@" & f)) & ")"
+            For Each row In rows
+                Dim parameters As New List(Of OleDb.OleDbParameter)()
+                For Each field In fieldNames
+                    parameters.Add(New OleDb.OleDbParameter("@" & field, If(row(field), DBNull.Value)))
+                Next
+                DbHelper.ExecuteNonQueryWithTransaction(transaction, sql, parameters.ToArray())
+            Next
+            Return True
+        Catch ex As Exception
+            Utils.LogUtil.LogError($"保存表[{tableName}]数据失败", ex)
+            Return False
+        End Try
+    End Function
 End Class 
