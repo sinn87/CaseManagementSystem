@@ -30,38 +30,23 @@ Public Class CaseManager
             Dim caseDetails As New List(Of CaseDetail)()
             Dim reviewLogs As New List(Of ReviewLog)()
             
+            ' 处理字段数据
             For Each kvp In tabData
                 Dim tabIndex As Integer = kvp.Key
                 Dim fieldData As Dictionary(Of String, String) = kvp.Value
                 
-                ' 检查是否有数据被修改（字段数据或DGV数据）
-                Dim hasFieldData As Boolean = fieldData.Count > 0
-                Dim hasGridData As Boolean = False
-                
-                ' 检查该Tab页是否有对应的DGV数据
-                For Each gridKvp In gridData
-                    Dim dgvTabIndex As Integer = GetTabIndexFromDgvName(gridKvp.Key)
-                    If dgvTabIndex = tabIndex AndAlso gridKvp.Value.Count > 0 Then
-                        hasGridData = True
-                        Exit For
-                    End If
-                Next
-                
-                ' 如果有字段数据或DGV数据，则准备审查记录
-                If hasFieldData OrElse hasGridData Then
+                If fieldData.Count > 0 Then
                     ' 准备字段数据
-                    If hasFieldData Then
-                        For Each fieldKvp In fieldData
-                            Dim detail As New CaseDetail With {
-                                .TabIndex = tabIndex,
-                                .FieldNo = fieldKvp.Key,
-                                .FieldValue = fieldKvp.Value,
-                                .FieldStatus = "新登录",
-                                .CreateTime = DateTime.Now
-                            }
-                            caseDetails.Add(detail)
-                        Next
-                    End If
+                    For Each fieldKvp In fieldData
+                        Dim detail As New CaseDetail With {
+                            .TabIndex = tabIndex,
+                            .FieldNo = fieldKvp.Key,
+                            .FieldValue = fieldKvp.Value,
+                            .FieldStatus = "新登录",
+                            .CreateTime = DateTime.Now
+                        }
+                        caseDetails.Add(detail)
+                    Next
                     
                     ' 准备审查记录
                     Dim reviewLog As New ReviewLog With {
@@ -71,6 +56,24 @@ Public Class CaseManager
                         .ReviewTime = DateTime.Now
                     }
                     reviewLogs.Add(reviewLog)
+                End If
+            Next
+            
+            ' 处理DGV数据（为没有字段数据但有DGV数据的Tab创建审查记录）
+            For Each kvp In gridData
+                If kvp.Value.Count > 0 Then
+                    Dim tabIndex As Integer = GetTabIndexFromDgvName(kvp.Key)
+                    
+                    ' 如果该Tab还没有审查记录，则创建一个
+                    If Not reviewLogs.Any(Function(r) r.TabIndex = tabIndex) Then
+                        Dim reviewLog As New ReviewLog With {
+                            .TabIndex = tabIndex,
+                            .ReviewerID = currentUser,
+                            .ReviewStatus = "新登录",
+                            .ReviewTime = DateTime.Now
+                        }
+                        reviewLogs.Add(reviewLog)
+                    End If
                 End If
             Next
             
