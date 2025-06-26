@@ -375,22 +375,34 @@ Public Class CaseRepository
     ''' <summary>
     ''' 在事务中创建审查记录
     ''' </summary>
-    ''' <param name="transaction">事务对象</param>
-    ''' <param name="reviewLog">审查记录</param>
-    Public Shared Sub CreateReviewLogWithTransaction(transaction As OleDbTransaction, reviewLog As ReviewLog)
-        Dim sql As String = "INSERT INTO ReviewLogs (CaseID, TabIndex, ReviewerID, ReviewStatus, ReviewComment, ReviewTime) VALUES (?, ?, ?, ?, ?, ?)"
-        
-        Dim parameters As OleDbParameter() = {
-            New OleDbParameter("@CaseID", reviewLog.CaseID),
-            New OleDbParameter("@TabIndex", reviewLog.TabIndex),
-            New OleDbParameter("@ReviewerID", reviewLog.ReviewerID),
-            New OleDbParameter("@ReviewStatus", reviewLog.ReviewStatus),
-            New OleDbParameter("@ReviewComment", If(reviewLog.ReviewComment, DBNull.Value)),
-            New OleDbParameter("@ReviewTime", reviewLog.ReviewTime)
-        }
-        
-        DbHelper.ExecuteNonQueryWithTransaction(transaction, sql, parameters)
-    End Sub
+    ''' <param name="transaction">数据库事务</param>
+    ''' <param name="caseId">案件ID</param>
+    ''' <param name="tabIndex">标签页索引</param>
+    ''' <param name="reviewerId">审查人ID</param>
+    ''' <param name="reviewStatus">审查状态</param>
+    ''' <param name="reviewTime">审查时间</param>
+    ''' <returns>是否创建成功</returns>
+    Public Shared Function CreateReviewLogWithTransaction(transaction As OleDbTransaction, caseId As Integer, tabIndex As Integer, reviewerId As String, reviewStatus As String, reviewTime As DateTime) As Boolean
+        Try
+            Dim sql As String = "INSERT INTO ReviewLogs (CaseID, TabIndex, ReviewerID, ReviewStatus, ReviewTime) VALUES (?, ?, ?, ?, ?)"
+            
+            Dim parameters As OleDbParameter() = {
+                New OleDbParameter("@CaseID", caseId),
+                New OleDbParameter("@TabIndex", tabIndex),
+                New OleDbParameter("@ReviewerID", reviewerId),
+                New OleDbParameter("@ReviewStatus", reviewStatus),
+                New OleDbParameter("@ReviewTime", reviewTime)
+            }
+            
+            DbHelper.ExecuteNonQueryWithTransaction(transaction, sql, parameters)
+            
+            Return True
+            
+        Catch ex As Exception
+            Utils.LogUtil.LogError("创建审查记录失败", ex)
+            Return False
+        End Try
+    End Function
     
     ' 通用保存DGV数据方法，插入时自动补全系统字段
     Public Shared Function SaveGridDataWithTransaction(transaction As OleDbTransaction, tableName As String, rows As List(Of Dictionary(Of String, String)), currentUser As String) As Boolean

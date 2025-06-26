@@ -8,10 +8,10 @@ Public Class CaseManager
     ''' </summary>
     ''' <param name="caseType">案件类型</param>
     ''' <param name="tabData">标签页数据字典，Key为标签页索引，Value为字段数据字典</param>
-    ''' <param name="gridData">DataGridView数据字典，Key为DataGridView名称，Value为行数据列表</param>
+    ''' <param name="gridData">DataGridView数据字典，Key为DataGridView名称，Value为(标签页索引, 行数据列表)的元组</param>
     ''' <param name="currentUser">当前用户ID</param>
     ''' <returns>是否保存成功</returns>
-    Public Shared Function CreateNewCase(caseType As String, tabData As Dictionary(Of Integer, Dictionary(Of String, String)), gridData As Dictionary(Of String, List(Of Dictionary(Of String, String))), currentUser As String) As Boolean
+    Public Shared Function CreateNewCase(caseType As String, tabData As Dictionary(Of Integer, Dictionary(Of String, String)), gridData As Dictionary(Of String, (TabIndex As Integer, Rows As List(Of Dictionary(Of String, String)))), currentUser As String) As Boolean
         Dim connection As OleDbConnection = Nothing
         Dim transaction As OleDbTransaction = Nothing
         
@@ -28,7 +28,7 @@ Public Class CaseManager
             
             ' 2. 准备详细信息数据
             Dim caseDetails As New List(Of CaseDetail)()
-            Dim reviewLogs As New List(Of ReviewLog)()
+            Dim reviewTabIndexes As New List(Of Integer)()
             
             ' 处理字段数据
             For Each kvp In tabData
@@ -48,31 +48,23 @@ Public Class CaseManager
                         caseDetails.Add(detail)
                     Next
                     
-                    ' 准备审查记录
-                    Dim reviewLog As New ReviewLog With {
-                        .TabIndex = tabIndex,
-                        .ReviewerID = currentUser,
-                        .ReviewStatus = "新登录",
-                        .ReviewTime = DateTime.Now
-                    }
-                    reviewLogs.Add(reviewLog)
+                    ' 记录需要创建审查记录的Tab索引
+                    If Not reviewTabIndexes.Contains(tabIndex) Then
+                        reviewTabIndexes.Add(tabIndex)
+                    End If
                 End If
             Next
             
             ' 处理DGV数据（为没有字段数据但有DGV数据的Tab创建审查记录）
             For Each kvp In gridData
-                If kvp.Value.Count > 0 Then
-                    Dim tabIndex As Integer = GetTabIndexFromDgvName(kvp.Key)
-                    
-                    ' 如果该Tab还没有审查记录，则创建一个
-                    If Not reviewLogs.Any(Function(r) r.TabIndex = tabIndex) Then
-                        Dim reviewLog As New ReviewLog With {
-                            .TabIndex = tabIndex,
-                            .ReviewerID = currentUser,
-                            .ReviewStatus = "新登录",
-                            .ReviewTime = DateTime.Now
-                        }
-                        reviewLogs.Add(reviewLog)
+                Dim dgvName As String = kvp.Key
+                Dim tabIndex As Integer = kvp.Value.TabIndex
+                Dim rows As List(Of Dictionary(Of String, String)) = kvp.Value.Rows
+                
+                If rows.Count > 0 Then
+                    ' 如果该Tab还没有审查记录，则添加到列表中
+                    If Not reviewTabIndexes.Contains(tabIndex) Then
+                        reviewTabIndexes.Add(tabIndex)
                     End If
                 End If
             Next
@@ -95,23 +87,25 @@ Public Class CaseManager
             
             ' 6. 在事务中保存所有DGV数据
             For Each kvp In gridData
-                Dim tableName = kvp.Key
-                Dim rows = kvp.Value
+                Dim dgvName As String = kvp.Key
+                Dim rows As List(Of Dictionary(Of String, String)) = kvp.Value.Rows
+                
                 If rows Is Nothing OrElse rows.Count = 0 Then
                     Continue For ' 跳过无数据的DGV
                 End If
                 For Each row In rows
                     If Not row.ContainsKey("caseID") Then row("caseID") = caseId
                 Next
-                If Not CaseRepository.SaveGridDataWithTransaction(transaction, tableName, rows, currentUser) Then
-                    Throw New Exception($"保存表[{tableName}]数据失败")
+                If Not CaseRepository.SaveGridDataWithTransaction(transaction, dgvName, rows, currentUser) Then
+                    Throw New Exception($"保存表[{dgvName}]数据失败")
                 End If
             Next
             
             ' 7. 在事务中批量保存审查记录
-            For Each reviewLog In reviewLogs
-                reviewLog.CaseID = caseId
-                CaseRepository.CreateReviewLogWithTransaction(transaction, reviewLog)
+            For Each tabIndex In reviewTabIndexes
+                If Not CaseRepository.CreateReviewLogWithTransaction(transaction, caseId, tabIndex, currentUser, "新登录", DateTime.Now) Then
+                    Throw New Exception($"创建审查记录失败，TabIndex: {tabIndex}")
+                End If
             Next
             
             ' 8. 提交事务
@@ -144,23 +138,6 @@ Public Class CaseManager
         End Try
     End Function
     
-    ''' <summary>
-    ''' 从DataGridView名称中提取标签页索引
-    ''' </summary>
-    ''' <param name="dgvName">DataGridView名称</param>
-    ''' <returns>标签页索引</returns>
-    Private Shared Function GetTabIndexFromDgvName(dgvName As String) As Integer
-        ' 假设命名规则为：dgvItems_1, dgvProducts_2 等
-        Dim parts As String() = dgvName.Split("_"c)
-        If parts.Length >= 2 Then
-            Dim indexStr As String = parts(parts.Length - 1)
-            Dim index As Integer
-            If Integer.TryParse(indexStr, index) Then
-                Return index - 1 ' 转换为0基索引
-            End If
-        End If
-        Return 0
-    End Function
     
     ''' <summary>
     ''' 从TabControl中提取有修改的数据
@@ -201,9 +178,9 @@ Public Class CaseManager
     ''' 提取所有TabPage中DataGridView的数据
     ''' </summary>
     ''' <param name="tabControl">TabControl控件</param>
-    ''' <returns>DataGridView名称和数据的字典</returns>
-    Public Shared Function ExtractGridData(tabControl As TabControl) As Dictionary(Of String, List(Of Dictionary(Of String, String)))
-        Dim result As New Dictionary(Of String, List(Of Dictionary(Of String, String)))
+    ''' <returns>包含标签页索引、DataGridView名称和数据的复合字典</returns>
+    Public Shared Function ExtractGridData(tabControl As TabControl) As Dictionary(Of String, (TabIndex As Integer, Rows As List(Of Dictionary(Of String, String))))
+        Dim result As New Dictionary(Of String, (TabIndex As Integer, Rows As List(Of Dictionary(Of String, String))))
         
         For i As Integer = 0 To tabControl.TabPages.Count - 1
             Dim tabPage As TabPage = tabControl.TabPages(i)
@@ -234,7 +211,7 @@ Public Class CaseManager
                     
                     ' 如果该DataGridView有数据，则添加到结果中
                     If rows.Count > 0 Then
-                        result(dgv.Name) = rows
+                        result(dgv.Name) = (i, rows)
                     End If
                 End If
             Next

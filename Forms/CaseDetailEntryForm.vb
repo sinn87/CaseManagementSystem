@@ -183,16 +183,16 @@ Public Class CaseDetailEntryForm
             
             ' 调用业务逻辑层提取数据
             Dim tabData As Dictionary(Of Integer, Dictionary(Of String, String)) = BusinessLogic.CaseManager.ExtractModifiedData(tabControl)
-            Dim tabGridData As Dictionary(Of Integer, List(Of Dictionary(Of String, String))) = BusinessLogic.CaseManager.ExtractGridData(tabControl)
+            Dim gridData As Dictionary(Of String, (TabIndex As Integer, Rows As List(Of Dictionary(Of String, String)))) = BusinessLogic.CaseManager.ExtractGridData(tabControl)
             
             ' 检查是否有数据需要保存
-            If tabData.Count = 0 AndAlso tabGridData.Count = 0 Then
+            If tabData.Count = 0 AndAlso gridData.Count = 0 Then
                 MessageBox.Show("没有检测到需要保存的数据，请至少在一个标签页中输入信息。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
             
             ' 调用业务逻辑层保存数据
-            Dim success As Boolean = BusinessLogic.CaseManager.CreateNewCase(_caseType, tabData, tabGridData, _currentUser)
+            Dim success As Boolean = BusinessLogic.CaseManager.CreateNewCase(_caseType, tabData, gridData, _currentUser)
             
             If success Then
                 MessageBox.Show("案件数据保存成功！", "成功", MessageBoxButtons.OK, MessageBoxIcon.Information)
