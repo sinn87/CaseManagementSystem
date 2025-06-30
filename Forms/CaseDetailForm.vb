@@ -1,6 +1,7 @@
 ' 案件详细页面窗体
 Imports System.Windows.Forms
 Imports System.Drawing
+Imports System.Data
 
 Public Class CaseDetailForm
     ' 控件声明

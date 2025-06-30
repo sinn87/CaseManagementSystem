@@ -1,5 +1,6 @@
 ' 案件管理业务逻辑
 Imports System.Collections.Generic
+Imports System.Data
 Imports System.Data.OleDb
 
 Public Class CaseManager
@@ -8,10 +9,10 @@ Public Class CaseManager
     ''' </summary>
     ''' <param name="caseType">案件类型</param>
     ''' <param name="tabData">标签页数据字典，Key为标签页索引，Value为字段数据字典</param>
-    ''' <param name="gridData">DataGridView数据字典，Key为DataGridView名称，Value为(标签页索引, 行数据列表)的元组</param>
+    ''' <param name="gridData">DataGridView数据字典，Key为DataGridView名称，Value为(标签页索引, DataTable)的元组</param>
     ''' <param name="currentUser">当前用户ID</param>
     ''' <returns>是否保存成功</returns>
-    Public Shared Function CreateNewCase(caseType As String, tabData As Dictionary(Of Integer, Dictionary(Of String, String)), gridData As Dictionary(Of String, (TabIndex As Integer, Rows As List(Of Dictionary(Of String, String)))), currentUser As String) As Boolean
+    Public Shared Function CreateNewCase(caseType As String, tabData As Dictionary(Of Integer, Dictionary(Of String, String)), gridData As Dictionary(Of String, (TabIndex As Integer, Table As DataTable)), currentUser As String) As Boolean
         Dim connection As OleDbConnection = Nothing
         Dim transaction As OleDbTransaction = Nothing
         
@@ -59,9 +60,9 @@ Public Class CaseManager
             For Each kvp In gridData
                 Dim dgvName As String = kvp.Key
                 Dim tabIndex As Integer = kvp.Value.TabIndex
-                Dim rows As List(Of Dictionary(Of String, String)) = kvp.Value.Rows
+                Dim dataTable As DataTable = kvp.Value.Table
                 
-                If rows.Count > 0 Then
+                If dataTable.Rows.Count > 0 Then
                     ' 如果该Tab还没有审查记录，则添加到列表中
                     If Not reviewTabIndexes.Contains(tabIndex) Then
                         reviewTabIndexes.Add(tabIndex)
@@ -88,15 +89,14 @@ Public Class CaseManager
             ' 6. 在事务中保存所有DGV数据
             For Each kvp In gridData
                 Dim dgvName As String = kvp.Key
-                Dim rows As List(Of Dictionary(Of String, String)) = kvp.Value.Rows
+                Dim dataTable As DataTable = kvp.Value.Table
                 
-                If rows Is Nothing OrElse rows.Count = 0 Then
+                If dataTable Is Nothing OrElse dataTable.Rows.Count = 0 Then
                     Continue For ' 跳过无数据的DGV
                 End If
-                For Each row In rows
-                    If Not row.ContainsKey("caseID") Then row("caseID") = caseId
-                Next
-                If Not CaseRepository.SaveGridDataWithTransaction(transaction, dgvName, rows, currentUser) Then
+                
+                ' 直接使用DataTable保存数据，支持行状态管理
+                If Not CaseRepository.SaveDataTableWithTransaction(transaction, dgvName, dataTable, currentUser, caseId) Then
                     Throw New Exception($"保存表[{dgvName}]数据失败")
                 End If
             Next
@@ -178,9 +178,9 @@ Public Class CaseManager
     ''' 提取所有TabPage中DataGridView的数据
     ''' </summary>
     ''' <param name="tabControl">TabControl控件</param>
-    ''' <returns>包含标签页索引、DataGridView名称和数据的复合字典</returns>
-    Public Shared Function ExtractGridData(tabControl As TabControl) As Dictionary(Of String, (TabIndex As Integer, Rows As List(Of Dictionary(Of String, String))))
-        Dim result As New Dictionary(Of String, (TabIndex As Integer, Rows As List(Of Dictionary(Of String, String))))
+    ''' <returns>包含标签页索引、DataGridView名称和DataTable的复合字典</returns>
+    Public Shared Function ExtractGridData(tabControl As TabControl) As Dictionary(Of String, (TabIndex As Integer, Table As DataTable))
+        Dim result As New Dictionary(Of String, (TabIndex As Integer, Table As DataTable))
         
         For i As Integer = 0 To tabControl.TabPages.Count - 1
             Dim tabPage As TabPage = tabControl.TabPages(i)
@@ -189,32 +189,19 @@ Public Class CaseManager
             For Each ctrl As Control In GetAllControls(tabPage)
                 If TypeOf ctrl Is DataGridView Then
                     Dim dgv As DataGridView = CType(ctrl, DataGridView)
-                    Dim rows As New List(Of Dictionary(Of String, String))
                     
-                    ' 遍历当前DataGridView的所有行
-                    For Each row As DataGridViewRow In dgv.Rows
-                        If Not row.IsNewRow Then
-                            Dim rowData As New Dictionary(Of String, String)
-                            
-                            ' 提取每一列的数据
-                            For Each col As DataGridViewColumn In dgv.Columns
-                                Dim cellValue As Object = row.Cells(col.Index).Value
-                                rowData(col.Name) = If(cellValue?.ToString(), "")
-                            Next
-                            
-                            ' 检查是否有有效数据（至少项目名称不为空）
-                            If Not String.IsNullOrEmpty(rowData("ItemName")) Then
-                                rows.Add(rowData)
-                            End If
+                    ' 检查DataGridView是否有数据源
+                    If dgv.DataSource IsNot Nothing AndAlso TypeOf dgv.DataSource Is DataTable Then
+                        Dim dataTable As DataTable = DirectCast(dgv.DataSource, DataTable)
+                        
+                        ' 检查DataTable是否有数据
+                        If dataTable.Rows.Count > 0 Then
+                            result(dgv.Name) = (i, dataTable)
                         End If
-                    Next
-                    
-                    ' 如果该DataGridView有数据，则添加到结果中
-                    If rows.Count > 0 Then
-                        result(dgv.Name) = (i, rows)
                     End If
                 End If
             Next
+            
         Next
         
         Return result

@@ -1,6 +1,8 @@
 ''' <summary>
 ''' Tab模板基础类 - 提供通用的模板功能实现
 ''' </summary>
+Imports System.Data
+
 Public MustInherit Class BaseTabTemplate
     Implements ITabTemplate
     
@@ -76,6 +78,10 @@ Public MustInherit Class BaseTabTemplate
                     DirectCast(control, DateTimePicker).Enabled = Not readOnly
                 ElseIf TypeOf control Is RichTextBox Then
                     DirectCast(control, RichTextBox).ReadOnly = readOnly
+                ElseIf TypeOf control Is DataGridView Then
+                    DirectCast(control, DataGridView).ReadOnly = readOnly
+                    DirectCast(control, DataGridView).AllowUserToAddRows = Not readOnly
+                    DirectCast(control, DataGridView).AllowUserToDeleteRows = Not readOnly
                 End If
             Next
         Next
@@ -89,6 +95,8 @@ Public MustInherit Class BaseTabTemplate
             For Each control As Control In GetAllControls(tabPage)
                 If TypeOf control Is TextBox OrElse TypeOf control Is ComboBox OrElse TypeOf control Is DateTimePicker OrElse TypeOf control Is RichTextBox Then
                     control.BackColor = backColor
+                ElseIf TypeOf control Is DataGridView Then
+                    DirectCast(control, DataGridView).BackgroundColor = backColor
                 End If
             Next
         Next
@@ -134,7 +142,46 @@ Public MustInherit Class BaseTabTemplate
                     SetControlValue(control, detail.FieldValue)
                 End If
             End If
+            
+            ' 确保DataGridView有正确的DataSource
+            If TypeOf control Is DataGridView Then
+                EnsureDataGridViewDataSource(DirectCast(control, DataGridView))
+            End If
         Next
+    End Sub
+    
+    ''' <summary>
+    ''' 确保DataGridView有正确的DataSource
+    ''' </summary>
+    ''' <param name="dgv">DataGridView控件</param>
+    Protected Sub EnsureDataGridViewDataSource(dgv As DataGridView)
+        If dgv.DataSource Is Nothing Then
+            ' 创建一个空的DataTable作为默认数据源
+            Dim dt As New DataTable()
+            
+            ' 根据DataGridView的名称或Tag来确定表结构
+            If Not String.IsNullOrEmpty(dgv.Name) Then
+                ' 可以根据DataGridView的名称来设置不同的列结构
+                Select Case dgv.Name.ToLower()
+                    Case "dgvperson", "dgv_person"
+                        dt.Columns.Add("编号", GetType(String))
+                        dt.Columns.Add("姓名", GetType(String))
+                        dt.Columns.Add("性别", GetType(String))
+                        dt.Columns.Add("部门", GetType(String))
+                    Case "dgvmaterial", "dgv_material"
+                        dt.Columns.Add("编号", GetType(String))
+                        dt.Columns.Add("材料名", GetType(String))
+                        dt.Columns.Add("数量", GetType(String))
+                        dt.Columns.Add("单位", GetType(String))
+                    Case Else
+                        ' 默认列结构
+                        dt.Columns.Add("项目名称", GetType(String))
+                        dt.Columns.Add("项目值", GetType(String))
+                End Select
+            End If
+            
+            dgv.DataSource = dt
+        End If
     End Sub
     
     ''' <summary>
@@ -171,6 +218,16 @@ Public MustInherit Class BaseTabTemplate
                 End If
             Case "RichTextBox"
                 DirectCast(control, RichTextBox).Text = value
+            Case "DataGridView"
+                ' DataGridView的数据通过DataSource设置，这里不处理字符串值
+                ' 如果需要设置DataGridView的数据，应该在模板中单独处理
+                ' 确保DataGridView有正确的DataSource
+                Dim dgv As DataGridView = DirectCast(control, DataGridView)
+                If dgv.DataSource Is Nothing Then
+                    ' 如果没有数据源，创建一个空的DataTable
+                    Dim dt As New DataTable()
+                    dgv.DataSource = dt
+                End If
         End Select
     End Sub
     
@@ -191,6 +248,10 @@ Public MustInherit Class BaseTabTemplate
                 Return DirectCast(control, DateTimePicker).Value.ToString("yyyy-MM-dd HH:mm:ss")
             Case "RichTextBox"
                 Return DirectCast(control, RichTextBox).Text
+            Case "DataGridView"
+                ' DataGridView的数据通过DataSource获取，返回空字符串
+                ' 实际的数据提取应该在模板中单独处理
+                Return ""
             Case Else
                 Return ""
         End Select

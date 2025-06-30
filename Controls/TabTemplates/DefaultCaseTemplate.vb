@@ -1,6 +1,8 @@
 ''' <summary>
 ''' 默认案件Tab模板 - 适用于通用案件类型
 ''' </summary>
+Imports System.Data
+
 Public Class DefaultCaseTemplate
     Inherits BaseTabTemplate
     
@@ -98,6 +100,51 @@ Public Class DefaultCaseTemplate
         }
         
         CreateControlGroup(tabPage, controls, y)
+        
+        ' 添加DataGridView示例（如果需要）
+        ' 注意：实际的DataGridView应该在您的自定义控件中创建
+        ' 这里只是示例，展示如何确保DataGridView有正确的DataSource
+        ' CreateSampleDataGridView(tabPage, y + 150)
+    End Sub
+    
+    ''' <summary>
+    ''' 创建示例DataGridView（仅供参考，实际使用时应删除）
+    ''' </summary>
+    ''' <param name="tabPage">标签页</param>
+    ''' <param name="y">Y坐标</param>
+    Private Sub CreateSampleDataGridView(tabPage As TabPage, y As Integer)
+        ' 创建标签
+        Dim lblDgv As New Label With {
+            .Text = "处理记录列表:",
+            .Location = New Point(20, y),
+            .AutoSize = True,
+            .Font = New Font("微软雅黑", 9)
+        }
+        tabPage.Controls.Add(lblDgv)
+        
+        ' 创建DataGridView
+        Dim dgv As New DataGridView With {
+            .Location = New Point(20, y + 25),
+            .Size = New Size(600, 200),
+            .Name = "dgvProcessRecords",
+            .Tag = "ProcessRecords",
+            .AllowUserToAddRows = True,
+            .AllowUserToDeleteRows = True,
+            .AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+        }
+        
+        ' 创建DataTable并设置列
+        Dim dt As New DataTable()
+        dt.Columns.Add("记录编号", GetType(String))
+        dt.Columns.Add("处理日期", GetType(String))
+        dt.Columns.Add("处理内容", GetType(String))
+        dt.Columns.Add("处理人员", GetType(String))
+        dt.Columns.Add("处理结果", GetType(String))
+        
+        ' 设置DataSource
+        dgv.DataSource = dt
+        
+        tabPage.Controls.Add(dgv)
     End Sub
     
     Private Sub CreateMemoControls(tabPage As TabPage, y As Integer)
